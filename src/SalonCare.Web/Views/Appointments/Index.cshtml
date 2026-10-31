@@ -1,0 +1,342 @@
+@model SalonCare.Web.Models.AppointmentIndexViewModel
+@{
+    ViewData["Title"] = "Quản lý Lịch hẹn & Chống Trùng giờ KTV";
+}
+
+<!-- BANNER GIỚI THIỆU ĐỒ ÁN W02/W03 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 text-white rounded-4 shadow-sm" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);">
+            <div class="card-body p-4 p-md-5">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <span class="badge bg-light text-primary px-3 py-2 rounded-pill fw-bold mb-2">
+                            <i class="bi bi-shield-check me-1"></i> BÁO CÁO TIẾN ĐỘ TUẦN 03 (W02/W03)
+                        </span>
+                        <h2 class="fw-bold mb-2">Hệ thống SalonCare CRM - Xếp lịch hẹn thông minh</h2>
+                        <p class="mb-0 text-white-50 fs-6">
+                            Đồ án: <em>"Hệ thống CRM quản lý Spa/Salon nhỏ giảm tỉ lệ bỏ hẹn (No-show) dựa trên phân khúc RFM"</em><br />
+                            Sinh viên: <strong>Hoàng Khắc Trung Hiếu</strong> (MSSV: <strong>2380600645</strong> - Lớp: <strong>23DTHC7</strong>) | GVHD: <strong>TS. Nguyễn Quang Trung</strong>
+                        </p>
+                    </div>
+                    <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                        <div class="d-inline-flex flex-column align-items-lg-end gap-1">
+                            <span class="badge bg-white text-dark py-2 px-3 rounded-3 shadow-sm text-start">
+                                <i class="bi bi-database-fill-gear text-primary me-1"></i> PostgreSQL 16 + EF Core 8.0
+                            </span>
+                            <span class="badge bg-white text-dark py-2 px-3 rounded-3 shadow-sm text-start">
+                                <i class="bi bi-cpu-fill text-success me-1"></i> ASP.NET Core 8.0 MVC Layered
+                            </span>
+                            <span class="badge bg-white text-dark py-2 px-3 rounded-3 shadow-sm text-start">
+                                <i class="bi bi-clock-history text-danger me-1"></i> Thuật toán chống Overlap KTV
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KHỐI THÔNG BÁO ALERT (TEMP DATA) -->
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm border-0 border-start border-danger border-5" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill fs-3 me-3 text-danger"></i>
+            <div>
+                <strong class="fs-6 d-block">CẢNH BÁO XUNG ĐỘT THỜI GIAN:</strong>
+                <span>@TempData["ErrorMessage"]</span>
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm border-0 border-start border-success border-5" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-check-circle-fill fs-3 me-3 text-success"></i>
+            <div>
+                <strong class="fs-6 d-block">THAO TÁC THÀNH CÔNG:</strong>
+                <span>@TempData["SuccessMessage"]</span>
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- KHỐI THỐNG KÊ NHANH (KPI CARDS) -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card kpi-card border-0 bg-white shadow-sm p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase">Tổng số lịch hẹn</span>
+                    <h3 class="fw-bold mb-0 mt-1 text-primary">@Model.TotalAppointments</h3>
+                </div>
+                <div class="bg-primary-subtle text-primary p-3 rounded-3">
+                    <i class="bi bi-calendar3 fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card kpi-card border-0 bg-white shadow-sm p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase">Đã xác nhận</span>
+                    <h3 class="fw-bold mb-0 mt-1 text-success">@Model.ConfirmedCount</h3>
+                </div>
+                <div class="bg-success-subtle text-success p-3 rounded-3">
+                    <i class="bi bi-patch-check-fill fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card kpi-card border-0 bg-white shadow-sm p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase">Chờ xử lý</span>
+                    <h3 class="fw-bold mb-0 mt-1 text-warning">@Model.PendingCount</h3>
+                </div>
+                <div class="bg-warning-subtle text-warning p-3 rounded-3">
+                    <i class="bi bi-hourglass-split fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card kpi-card border-0 bg-white shadow-sm p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase">No-Show (Bỏ hẹn)</span>
+                    <h3 class="fw-bold mb-0 mt-1 text-danger">@Model.NoShowCount</h3>
+                </div>
+                <div class="bg-danger-subtle text-danger p-3 rounded-3">
+                    <i class="bi bi-person-x-fill fs-3"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KHU VỰC CHÍNH: FORM ĐẶT LỊCH (BÊN TRÁI) VÀ DANH SÁCH LỊCH HẸN (BÊN PHẢI) -->
+<div class="row g-4">
+    <!-- CỘT TRÁI: FORM ĐẶT LỊCH HẸN MỚI -->
+    <div class="col-lg-4">
+        <div class="card card-custom h-100">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="bi bi-plus-circle-fill text-primary me-2"></i>Đặt Lịch Hẹn Mới
+                </h5>
+                <small class="text-muted">Kiểm tra xung đột KTV thời gian thực</small>
+            </div>
+            <div class="card-body p-4">
+                <form asp-controller="Appointments" asp-action="Create" method="post" id="appointmentForm">
+                    @Html.AntiForgeryToken()
+
+                    <!-- Chọn Khách hàng -->
+                    <div class="mb-3">
+                        <label asp-for="FormModel.CustomerId" class="form-label fw-semibold">
+                            <i class="bi bi-person me-1"></i> Khách hàng <span class="text-danger">*</span>
+                        </label>
+                        <select asp-for="FormModel.CustomerId" class="form-select form-select-lg fs-6" required>
+                            <option value="">-- Chọn khách hàng --</option>
+                            @foreach (var cust in Model.Customers)
+                            {
+                                <option value="@cust.CustomerId">@cust.FullName - @cust.PhoneNumber</option>
+                            }
+                        </select>
+                        <span asp-validation-for="FormModel.CustomerId" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Chọn Kỹ thuật viên -->
+                    <div class="mb-3">
+                        <label asp-for="FormModel.TechnicianId" class="form-label fw-semibold">
+                            <i class="bi bi-scissors me-1"></i> Kỹ thuật viên (Thợ) <span class="text-danger">*</span>
+                        </label>
+                        <select asp-for="FormModel.TechnicianId" class="form-select form-select-lg fs-6" required>
+                            <option value="">-- Chọn kỹ thuật viên --</option>
+                            @foreach (var tech in Model.Technicians)
+                            {
+                                <option value="@tech.TechnicianId">@tech.FullName (@tech.Specialization)</option>
+                            }
+                        </select>
+                        <span asp-validation-for="FormModel.TechnicianId" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Tên Dịch vụ -->
+                    <div class="mb-3">
+                        <label asp-for="FormModel.ServiceName" class="form-label fw-semibold">
+                            <i class="bi bi-stars me-1"></i> Gói Dịch vụ <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="FormModel.ServiceName" class="form-control" placeholder="Ví dụ: Cắt uốn tạo kiểu, Chăm sóc da..." required />
+                        <span asp-validation-for="FormModel.ServiceName" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Đơn giá -->
+                    <div class="mb-3">
+                        <label asp-for="FormModel.Price" class="form-label fw-semibold">
+                            <i class="bi bi-cash-stack me-1"></i> Đơn giá dự kiến (VNĐ) <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="FormModel.Price" type="number" step="10000" class="form-control" required />
+                        <span asp-validation-for="FormModel.Price" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Ngày hẹn -->
+                    <div class="mb-3">
+                        <label asp-for="FormModel.AppointmentDate" class="form-label fw-semibold">
+                            <i class="bi bi-calendar-date me-1"></i> Ngày hẹn <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="FormModel.AppointmentDate" type="date" class="form-control" required />
+                        <span asp-validation-for="FormModel.AppointmentDate" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Khung giờ (Bắt đầu - Kết thúc) -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label asp-for="FormModel.StartTime" class="form-label fw-semibold small">Giờ Bắt Đầu <span class="text-danger">*</span></label>
+                            <input asp-for="FormModel.StartTime" type="time" class="form-control" required />
+                        </div>
+                        <div class="col-6">
+                            <label asp-for="FormModel.EndTime" class="form-label fw-semibold small">Giờ Kết Thúc <span class="text-danger">*</span></label>
+                            <input asp-for="FormModel.EndTime" type="time" class="form-control" required />
+                        </div>
+                    </div>
+
+                    <!-- Ghi chú -->
+                    <div class="mb-4">
+                        <label asp-for="FormModel.Notes" class="form-label fw-semibold">
+                            <i class="bi bi-chat-left-text me-1"></i> Ghi chú yêu cầu
+                        </label>
+                        <textarea asp-for="FormModel.Notes" class="form-control" rows="2" placeholder="Yêu cầu riêng của khách..."></textarea>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg fw-semibold shadow-sm">
+                            <i class="bi bi-calendar-plus me-1"></i> Xác nhận Đặt Lịch
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer bg-light border-top p-3 small text-muted">
+                <i class="bi bi-info-circle-fill text-primary me-1"></i>
+                <strong>Mẹo kiểm thử:</strong> Thử chọn KTV Nguyễn Văn Hùng vào ngày <strong>02/11/2026</strong> khung giờ <strong>09:15 - 09:45</strong> để xem thông báo chặn trùng lịch!
+            </div>
+        </div>
+    </div>
+
+    <!-- CỘT PHẢI: BẢNG DANH SÁCH LỊCH HẸN -->
+    <div class="col-lg-8">
+        <div class="card card-custom h-100">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-card-checklist text-primary me-2"></i>Danh Sách Lịch Hẹn Đã Xếp
+                    </h5>
+                    <small class="text-muted">Theo dõi và quản lý lịch phục vụ của salon</small>
+                </div>
+                <div>
+                    <span class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill">
+                        <i class="bi bi-list-check me-1"></i> @Model.Appointments.Count() Lịch hẹn
+                    </span>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light text-secondary small text-uppercase">
+                            <tr>
+                                <th class="ps-4">Mã</th>
+                                <th>Khách Hàng</th>
+                                <th>Kỹ Thuật Viên</th>
+                                <th>Dịch Vụ & Giá</th>
+                                <th>Ngày & Khung Giờ</th>
+                                <th>Trạng Thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.Appointments.Any())
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center py-5 text-muted">
+                                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                        Chưa có lịch hẹn nào trong hệ thống. Hãy sử dụng form bên trái để đặt lịch mới!
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var item in Model.Appointments)
+                                {
+                                    <tr>
+                                        <td class="ps-4 fw-bold text-muted">#@item.AppointmentId</td>
+                                        <td>
+                                            <div class="fw-bold text-dark">@(item.Customer?.FullName ?? "N/A")</div>
+                                            <div class="small text-muted">
+                                                <i class="bi bi-telephone me-1"></i>@(item.Customer?.PhoneNumber ?? "---")
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold text-primary">@(item.Technician?.FullName ?? "N/A")</div>
+                                            <div class="small text-muted">@(item.Technician?.Specialization ?? "KTV Salon")</div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold">@item.ServiceName</div>
+                                            <div class="small text-success fw-semibold">@item.Price.ToString("N0") VNĐ</div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-dark">
+                                                <i class="bi bi-calendar3 me-1 text-secondary"></i>@item.AppointmentDate.ToString("dd/MM/yyyy")
+                                            </div>
+                                            <div class="small text-muted">
+                                                <i class="bi bi-clock me-1 text-secondary"></i>@item.StartTime.ToString("HH:mm") - @item.EndTime.ToString("HH:mm")
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @switch (item.Status)
+                                            {
+                                                case AppointmentStatus.Confirmed:
+                                                    <span class="badge badge-status-confirmed px-3 py-2 rounded-pill">
+                                                        <i class="bi bi-check-circle me-1"></i>Đã xác nhận
+                                                    </span>
+                                                    break;
+                                                case AppointmentStatus.Pending:
+                                                    <span class="badge badge-status-pending px-3 py-2 rounded-pill">
+                                                        <i class="bi bi-hourglass me-1"></i>Chờ xác nhận
+                                                    </span>
+                                                    break;
+                                                case AppointmentStatus.Completed:
+                                                    <span class="badge badge-status-completed px-3 py-2 rounded-pill">
+                                                        <i class="bi bi-award me-1"></i>Hoàn thành
+                                                    </span>
+                                                    break;
+                                                case AppointmentStatus.NoShow:
+                                                    <span class="badge badge-status-noshow px-3 py-2 rounded-pill">
+                                                        <i class="bi bi-x-octagon me-1"></i>Bỏ hẹn (No-Show)
+                                                    </span>
+                                                    break;
+                                                case AppointmentStatus.Canceled:
+                                                    <span class="badge badge-status-canceled px-3 py-2 rounded-pill">
+                                                        <i class="bi bi-slash-circle me-1"></i>Đã hủy
+                                                    </span>
+                                                    break;
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer bg-white border-top py-3 px-4 d-flex justify-content-between align-items-center">
+                <span class="text-muted small">Cơ chế phát hiện trùng giờ: <code>StartTime &lt; EndTime2 AND EndTime &gt; StartTime2</code></span>
+                <span class="badge bg-light text-dark border">EF Core Npgsql Provider</span>
+            </div>
+        </div>
+    </div>
+</div>
