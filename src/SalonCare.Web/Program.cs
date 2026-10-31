@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using SalonCare.Core.Interfaces;
 using SalonCare.Core.Services;
 using SalonCare.Infrastructure.Data;
@@ -9,13 +10,29 @@ var builder = WebApplication.CreateBuilder(args);
 // Cấu hình Controllers with Views (MVC)
 builder.Services.AddControllersWithViews();
 
-// Cấu hình PostgreSQL Database với Entity Framework Core 8.0
+// Kiểm tra kết nối CSDL PostgreSQL trước khi khởi tạo
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+bool isPostgreSqlAvailable = false;
 
-// Đăng ký DbContext: Ưu tiên PostgreSQL Npgsql
+if (!string.IsNullOrWhiteSpace(connectionString))
+{
+    try
+    {
+        using var testConn = new NpgsqlConnection(connectionString);
+        testConn.Open();
+        isPostgreSqlAvailable = true;
+    }
+    catch
+    {
+        isPostgreSqlAvailable = false;
+    }
+}
+
+// Đăng ký DbContext: Tự động dùng PostgreSQL nếu kết nối thành công,
+// hoặc chuyển đổi an toàn sang InMemory Database để luôn đảm bảo chạy demo ổn định 100%.
 builder.Services.AddDbContext<SalonCareDbContext>(options =>
 {
-    if (!string.IsNullOrEmpty(connectionString))
+    if (isPostgreSqlAvailable)
     {
         options.UseNpgsql(connectionString, npgsqlOptions =>
         {
@@ -27,7 +44,7 @@ builder.Services.AddDbContext<SalonCareDbContext>(options =>
     }
     else
     {
-        options.UseInMemoryDatabase("SalonCare_Demo_Db");
+        options.UseInMemoryDatabase("SalonCare_Active_Db");
     }
 });
 
@@ -40,21 +57,24 @@ builder.Services.AddScoped<IRfmService, RfmService>();
 
 var app = builder.Build();
 
-// Tự động kiểm tra và khởi tạo Database Schema & Seed Data ban đầu
+// Khởi tạo Database Schema & nạp Seed Data
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var logger = services.GetRequiredService<ILogger<Program>>();
-    try
+    var db = services.GetRequiredService<SalonCareDbContext>();
+
+    if (isPostgreSqlAvailable)
     {
-        var db = services.GetRequiredService<SalonCareDbContext>();
-        logger.LogInformation("Đang kiểm tra kết nối CSDL PostgreSQL...");
+        logger.LogInformation(">>> Đang sử dụng cơ sở dữ liệu: PostgreSQL 16");
         db.Database.EnsureCreated();
-        logger.LogInformation("Khởi tạo cấu trúc CSDL và Seed Data thành công!");
+        logger.LogInformation(">>> Khởi tạo cấu trúc PostgreSQL và Seed Data thành công!");
     }
-    catch (Exception ex)
+    else
     {
-        logger.LogWarning("Không thể kết nối trực tiếp đến PostgreSQL ({Message}). Ứng dụng sẽ hoạt động ở chế độ Demo Memory để đảm bảo chạy mượt mà.", ex.Message);
+        logger.LogWarning(">>> Không kết nối được PostgreSQL (Kiểm tra lại tài khoản/mật khẩu trong appsettings.json).");
+        logger.LogInformation(">>> Hệ thống kích hoạt In-Memory Database Mode: Khởi tạo Seed Data demo sẵn sàng!");
+        db.Database.EnsureCreated();
     }
 }
 
