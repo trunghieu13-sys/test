@@ -13,6 +13,11 @@ public interface IAppointmentRepository
     Task<IEnumerable<Appointment>> GetAllAsync();
 
     /// <summary>
+    /// Lấy danh sách lịch hẹn của một kỹ thuật viên trong một ngày cụ thể (loại trừ đã hủy).
+    /// </summary>
+    Task<IEnumerable<Appointment>> GetByTechnicianAndDateAsync(int technicianId, DateOnly appointmentDate);
+
+    /// <summary>
     /// Lấy thông tin chi tiết một lịch hẹn theo Id.
     /// </summary>
     Task<Appointment?> GetByIdAsync(int id);
@@ -21,12 +26,6 @@ public interface IAppointmentRepository
     /// Kiểm tra xem Kỹ thuật viên có bị trùng lịch hẹn trong khung giờ [startTime, endTime) vào ngày chỉ định hay không.
     /// Công thức trùng: (startTime < existing.EndTime) && (endTime > existing.StartTime).
     /// </summary>
-    /// <param name="technicianId">Mã kỹ thuật viên</param>
-    /// <param name="appointmentDate">Ngày hẹn</param>
-    /// <param name="startTime">Giờ bắt đầu</param>
-    /// <param name="endTime">Giờ kết thúc</param>
-    /// <param name="excludeAppointmentId">ID lịch hẹn loại trừ (dùng khi cập nhật)</param>
-    /// <returns>True nếu trùng lịch, False nếu khung giờ khả dụng</returns>
     Task<bool> HasOverlapAsync(int technicianId, DateOnly appointmentDate, TimeOnly startTime, TimeOnly endTime, int? excludeAppointmentId = null);
 
     /// <summary>

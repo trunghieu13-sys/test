@@ -8,7 +8,7 @@ namespace SalonCare.Web.Controllers;
 
 /// <summary>
 /// Controller điều phối màn hình và luồng nghiệp vụ Lịch hẹn của SalonCare CRM.
-/// Thực hiện kiểm tra xung đột trùng lặp lịch kỹ thuật viên theo W02/W03.
+/// Khung giờ hoạt động chuẩn: 06:00 sáng đến 16:00 (4h chiều).
 /// </summary>
 public class AppointmentsController : Controller
 {
@@ -16,6 +16,10 @@ public class AppointmentsController : Controller
     private readonly ICustomerRepository _customerRepository;
     private readonly ITechnicianRepository _technicianRepository;
     private readonly ILogger<AppointmentsController> _logger;
+
+    // Khung giờ làm việc cố định: 6h sáng đến 4h chiều (06:00 - 16:00)
+    public static readonly TimeOnly WorkStart = new(6, 0);
+    public static readonly TimeOnly WorkEnd = new(16, 0);
 
     public AppointmentsController(
         IAppointmentRepository appointmentRepository,
@@ -51,6 +55,59 @@ public class AppointmentsController : Controller
     }
 
     /// <summary>
+    /// API trả về danh sách khung giờ ĐÃ ĐẶT (nút đỏ) và khung giờ RẢNH (nút xanh)
+    /// theo kỹ thuật viên và ngày làm việc (từ 06:00 đến 16:00).
+    /// GET: /Appointments/GetSchedule?technicianId=1&date=2026-11-02
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> GetSchedule(int technicianId, DateOnly date)
+    {
+        var existingAppointments = (await _appointmentRepository.GetByTechnicianAndDateAsync(technicianId, date)).ToList();
+
+        // 1. Danh sách khung giờ ĐÃ ĐẶT (Bận)
+        var busySlots = existingAppointments.Select(a => new
+        {
+            id = a.AppointmentId,
+            start = a.StartTime.ToString("HH:mm"),
+            end = a.EndTime.ToString("HH:mm"),
+            label = $"{a.StartTime:HH\\:mm} - {a.EndTime:HH\\:mm}",
+            service = a.ServiceName,
+            customer = a.Customer?.FullName ?? "Khách hàng"
+        }).ToList();
+
+        // 2. Tính toán danh sách khung giờ RẢNH trong khoảng làm việc 06:00 -> 16:00 (mỗi slot 1 tiếng)
+        var freeSlots = new List<object>();
+
+        for (int hour = WorkStart.Hour; hour < WorkEnd.Hour; hour++)
+        {
+            var slotStart = new TimeOnly(hour, 0);
+            var slotEnd = new TimeOnly(hour + 1, 0);
+
+            // Kiểm tra slot này có bị giao thoa với bất kỳ lịch đã đặt nào không
+            bool isBusy = existingAppointments.Any(a => slotStart < a.EndTime && slotEnd > a.StartTime);
+
+            if (!isBusy)
+            {
+                freeSlots.Add(new
+                {
+                    start = slotStart.ToString("HH:mm"),
+                    end = slotEnd.ToString("HH:mm"),
+                    label = $"{slotStart:HH\\:mm} - {slotEnd:HH\\:mm}"
+                });
+            }
+        }
+
+        return Json(new
+        {
+            technicianId,
+            date = date.ToString("yyyy-MM-dd"),
+            workHours = $"{WorkStart:HH\\:mm} - {WorkEnd:HH\\:mm}",
+            busySlots,
+            freeSlots
+        });
+    }
+
+    /// <summary>
     /// Xử lý tạo mới lịch hẹn và kiểm tra xung đột lịch của KTV.
     /// POST: /Appointments/Create
     /// </summary>
@@ -58,7 +115,7 @@ public class AppointmentsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateAppointmentViewModel model)
     {
-        // Xử lý tự động trích xuất nếu form submit có tiền tố FormModel.* từ Razor View
+        // Tự động trích xuất nếu form submit có tiền tố FormModel.*
         if ((!model.CustomerId.HasValue || model.CustomerId == 0) && Request.Form.ContainsKey("FormModel.CustomerId"))
         {
             if (int.TryParse(Request.Form["FormModel.CustomerId"], out int cId)) model.CustomerId = cId;
@@ -90,14 +147,21 @@ public class AppointmentsController : Controller
             return RedirectToAction(nameof(Index));
         }
 
-        // 2. Kiểm tra tính logic của thời gian: Giờ kết thúc phải sau giờ bắt đầu
+        // 2. Kiểm tra tính logic thời gian
         if (model.StartTime >= model.EndTime)
         {
             TempData["ErrorMessage"] = "RẤT TIẾC: Giờ kết thúc phải sau giờ bắt đầu lịch hẹn!";
             return RedirectToAction(nameof(Index));
         }
 
-        // 3. KIỂM TRA TRÙNG LỊCH KỸ THUẬT VIÊN (BẮT BUỘC THEO YÊU CẦU ĐỒ ÁN)
+        // 3. KIỂM TRA KHUNG GIỜ LÀM VIỆC CỦA SALON: 06:00 - 16:00
+        if (model.StartTime < WorkStart || model.EndTime > WorkEnd)
+        {
+            TempData["ErrorMessage"] = $"RẤT TIẾC: Khung giờ làm việc của Salon chỉ từ {WorkStart:HH\\:mm} sáng đến {WorkEnd:HH\\:mm} (4h chiều)!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // 4. KIỂM TRA TRÙNG LỊCH KỸ THUẬT VIÊN (BẮT BUỘC THEO YÊU CẦU ĐỒ ÁN)
         var overlappingAppt = await _appointmentRepository.GetOverlappingAppointmentAsync(
             model.TechnicianId.Value,
             model.AppointmentDate,
@@ -112,12 +176,11 @@ public class AppointmentsController : Controller
                 model.TechnicianId, model.AppointmentDate, model.StartTime, model.EndTime, overlappingAppt.AppointmentId
             );
 
-            // Thông báo lỗi chi tiết giúp người dùng hiểu rõ lịch nào đang bị trùng
             TempData["ErrorMessage"] = $"RẤT TIẾC: Kỹ thuật viên đã có lịch hẹn trùng trong khung giờ này! (Đang trùng với Lịch #{overlappingAppt.AppointmentId} lúc {overlappingAppt.StartTime:HH\\:mm} - {overlappingAppt.EndTime:HH\\:mm}: {overlappingAppt.ServiceName})";
             return RedirectToAction(nameof(Index));
         }
 
-        // 4. Nếu không trùng lịch, tiến hành tạo mới thực thể Appointment
+        // 5. Nếu không trùng lịch, tạo mới thực thể Appointment
         var appointment = new Appointment
         {
             CustomerId = model.CustomerId.Value,
@@ -144,7 +207,7 @@ public class AppointmentsController : Controller
     }
 
     /// <summary>
-    /// Xóa lịch hẹn để phục vụ kiểm thử linh hoạt trên giao diện.
+    /// Xóa lịch hẹn.
     /// POST: /Appointments/Delete
     /// </summary>
     [HttpPost]

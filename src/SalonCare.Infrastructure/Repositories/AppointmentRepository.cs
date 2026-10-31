@@ -31,6 +31,19 @@ public class AppointmentRepository : IAppointmentRepository
     }
 
     /// <inheritdoc />
+    public async Task<IEnumerable<Appointment>> GetByTechnicianAndDateAsync(int technicianId, DateOnly appointmentDate)
+    {
+        return await _context.Appointments
+            .Include(a => a.Customer)
+            .Where(a => a.TechnicianId == technicianId
+                     && a.AppointmentDate == appointmentDate
+                     && a.Status != AppointmentStatus.Canceled)
+            .OrderBy(a => a.StartTime)
+            .AsNoTracking()
+            .ToListAsync();
+    }
+
+    /// <inheritdoc />
     public async Task<Appointment?> GetByIdAsync(int id)
     {
         return await _context.Appointments
