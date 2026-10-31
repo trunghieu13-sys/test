@@ -98,22 +98,22 @@ public class AppointmentsController : Controller
         }
 
         // 3. KIỂM TRA TRÙNG LỊCH KỸ THUẬT VIÊN (BẮT BUỘC THEO YÊU CẦU ĐỒ ÁN)
-        var hasOverlap = await _appointmentRepository.HasOverlapAsync(
+        var overlappingAppt = await _appointmentRepository.GetOverlappingAppointmentAsync(
             model.TechnicianId.Value,
             model.AppointmentDate,
             model.StartTime,
             model.EndTime
         );
 
-        if (hasOverlap)
+        if (overlappingAppt != null)
         {
             _logger.LogWarning(
-                "Phát hiện trùng lịch KTV Id {TechId} vào ngày {Date} lúc {Start} - {End}",
-                model.TechnicianId, model.AppointmentDate, model.StartTime, model.EndTime
+                "Phát hiện trùng lịch KTV Id {TechId} vào ngày {Date} lúc {Start} - {End} (Trùng với Lịch #{ApptId})",
+                model.TechnicianId, model.AppointmentDate, model.StartTime, model.EndTime, overlappingAppt.AppointmentId
             );
 
-            // Thông báo lỗi bắt buộc theo yêu cầu đề bài
-            TempData["ErrorMessage"] = "RẤT TIẾC: Kỹ thuật viên đã có lịch hẹn trùng trong khung giờ này!";
+            // Thông báo lỗi chi tiết giúp người dùng hiểu rõ lịch nào đang bị trùng
+            TempData["ErrorMessage"] = $"RẤT TIẾC: Kỹ thuật viên đã có lịch hẹn trùng trong khung giờ này! (Đang trùng với Lịch #{overlappingAppt.AppointmentId} lúc {overlappingAppt.StartTime:HH\\:mm} - {overlappingAppt.EndTime:HH\\:mm}: {overlappingAppt.ServiceName})";
             return RedirectToAction(nameof(Index));
         }
 
@@ -127,7 +127,7 @@ public class AppointmentsController : Controller
             EndTime = model.EndTime,
             ServiceName = model.ServiceName,
             Price = model.Price,
-            Status = AppointmentStatus.Confirmed, // Mặc định Đã xác nhận khi xếp lịch
+            Status = AppointmentStatus.Confirmed,
             Notes = model.Notes,
             CreatedAt = DateTime.UtcNow
         };
@@ -140,6 +140,19 @@ public class AppointmentsController : Controller
         );
 
         TempData["SuccessMessage"] = $"Đặt lịch hẹn thành công cho khách hàng! Thời gian: {model.StartTime:HH\\:mm} - {model.EndTime:HH\\:mm} ngày {model.AppointmentDate:dd/MM/yyyy}.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    /// <summary>
+    /// Xóa lịch hẹn để phục vụ kiểm thử linh hoạt trên giao diện.
+    /// POST: /Appointments/Delete
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id)
+    {
+        await _appointmentRepository.DeleteAsync(id);
+        TempData["SuccessMessage"] = $"Đã xóa lịch hẹn #{id} thành công!";
         return RedirectToAction(nameof(Index));
     }
 }

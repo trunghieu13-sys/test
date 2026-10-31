@@ -47,12 +47,31 @@ public class AppointmentRepository : IAppointmentRepository
         TimeOnly endTime,
         int? excludeAppointmentId = null)
     {
-        // Công thức kiểm tra 2 khoảng thời gian [start1, end1) và [start2, end2) giao nhau:
-        // Overlap khi: start1 < end2 && end1 > start2
-        // Bỏ qua các lịch hẹn đã Hủy (Canceled)
         return await _context.Appointments
             .AsNoTracking()
             .AnyAsync(a =>
+                a.TechnicianId == technicianId &&
+                a.AppointmentDate == appointmentDate &&
+                a.Status != AppointmentStatus.Canceled &&
+                (!excludeAppointmentId.HasValue || a.AppointmentId != excludeAppointmentId.Value) &&
+                startTime < a.EndTime &&
+                endTime > a.StartTime
+            );
+    }
+
+    /// <inheritdoc />
+    public async Task<Appointment?> GetOverlappingAppointmentAsync(
+        int technicianId,
+        DateOnly appointmentDate,
+        TimeOnly startTime,
+        TimeOnly endTime,
+        int? excludeAppointmentId = null)
+    {
+        return await _context.Appointments
+            .Include(a => a.Technician)
+            .Include(a => a.Customer)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a =>
                 a.TechnicianId == technicianId &&
                 a.AppointmentDate == appointmentDate &&
                 a.Status != AppointmentStatus.Canceled &&

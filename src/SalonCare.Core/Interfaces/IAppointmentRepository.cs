@@ -30,6 +30,11 @@ public interface IAppointmentRepository
     Task<bool> HasOverlapAsync(int technicianId, DateOnly appointmentDate, TimeOnly startTime, TimeOnly endTime, int? excludeAppointmentId = null);
 
     /// <summary>
+    /// Tìm lịch hẹn đang bị trùng lặp của KTV (nếu có) để hiển thị chi tiết cho người dùng.
+    /// </summary>
+    Task<Appointment?> GetOverlappingAppointmentAsync(int technicianId, DateOnly appointmentDate, TimeOnly startTime, TimeOnly endTime, int? excludeAppointmentId = null);
+
+    /// <summary>
     /// Thêm mới một lịch hẹn vào cơ sở dữ liệu.
     /// </summary>
     Task AddAsync(Appointment appointment);

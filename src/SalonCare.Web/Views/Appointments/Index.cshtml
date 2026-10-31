@@ -147,7 +147,7 @@
                             <option value="">-- Chọn khách hàng --</option>
                             @foreach (var cust in Model.Customers)
                             {
-                                <option value="@cust.CustomerId">@cust.FullName - @cust.PhoneNumber</option>
+                                <option value="@cust.CustomerId" selected="@(cust.CustomerId == 1 ? "selected" : null)">@cust.FullName - @cust.PhoneNumber</option>
                             }
                         </select>
                     </div>
@@ -161,7 +161,7 @@
                             <option value="">-- Chọn kỹ thuật viên --</option>
                             @foreach (var tech in Model.Technicians)
                             {
-                                <option value="@tech.TechnicianId">@tech.FullName (@tech.Specialization)</option>
+                                <option value="@tech.TechnicianId" selected="@(tech.TechnicianId == 1 ? "selected" : null)">@tech.FullName (@tech.Specialization)</option>
                             }
                         </select>
                     </div>
@@ -191,15 +191,25 @@
                     </div>
 
                     <!-- Khung giờ (Bắt đầu - Kết thúc) -->
-                    <div class="row g-2 mb-3">
+                    <div class="row g-2 mb-2">
                         <div class="col-6">
                             <label for="StartTime" class="form-label fw-semibold small">Giờ Bắt Đầu <span class="text-danger">*</span></label>
-                            <input name="StartTime" id="StartTime" type="time" class="form-control" value="09:15" required />
+                            <input name="StartTime" id="StartTime" type="time" class="form-control" value="10:30" required />
                         </div>
                         <div class="col-6">
                             <label for="EndTime" class="form-label fw-semibold small">Giờ Kết Thúc <span class="text-danger">*</span></label>
-                            <input name="EndTime" id="EndTime" type="time" class="form-control" value="09:45" required />
+                            <input name="EndTime" id="EndTime" type="time" class="form-control" value="11:30" required />
                         </div>
+                    </div>
+
+                    <!-- Nút bấm chọn nhanh khung giờ test -->
+                    <div class="mb-3 d-flex gap-2">
+                        <button type="button" class="btn btn-outline-danger btn-sm flex-fill" onclick="setSlot('09:15', '09:45')">
+                            <i class="bi bi-clock-history me-1"></i> Giờ Trùng (09:15-09:45)
+                        </button>
+                        <button type="button" class="btn btn-outline-success btn-sm flex-fill" onclick="setSlot('15:30', '16:30')">
+                            <i class="bi bi-check2-circle me-1"></i> Giờ Rảnh (15:30-16:30)
+                        </button>
                     </div>
 
                     <!-- Ghi chú -->
@@ -219,7 +229,7 @@
             </div>
             <div class="card-footer bg-light border-top p-3 small text-muted">
                 <i class="bi bi-info-circle-fill text-primary me-1"></i>
-                <strong>Mẹo kiểm thử:</strong> Chọn KTV <strong>Nguyễn Văn Hùng</strong> ngày <strong>02/11/2026</strong> giờ <strong>09:15 - 09:45</strong> để xem thông báo chặn trùng lịch! Sau đó đổi sang <strong>14:00 - 15:00</strong> để đặt thành công.
+                <strong>Mẹo:</strong> Bấm nút <code>Giờ Trùng</code> để xem thông báo chặn xung đột, hoặc bấm <code>Giờ Rảnh</code> để đặt lịch thành công tức thì!
             </div>
         </div>
     </div>
@@ -251,13 +261,14 @@
                                 <th>Dịch Vụ & Giá</th>
                                 <th>Ngày & Khung Giờ</th>
                                 <th>Trạng Thái</th>
+                                <th class="text-center pe-4">Thao Tác</th>
                             </tr>
                         </thead>
                         <tbody>
                             @if (!Model.Appointments.Any())
                             {
                                 <tr>
-                                    <td colspan="6" class="text-center py-5 text-muted">
+                                    <td colspan="7" class="text-center py-5 text-muted">
                                         <i class="bi bi-inbox fs-1 d-block mb-2"></i>
                                         Chưa có lịch hẹn nào trong hệ thống. Hãy sử dụng form bên trái để đặt lịch mới!
                                     </td>
@@ -321,6 +332,14 @@
                                                     break;
                                             }
                                         </td>
+                                        <td class="text-center pe-4">
+                                            <form asp-controller="Appointments" asp-action="Delete" asp-route-id="@item.AppointmentId" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa lịch hẹn #@item.AppointmentId?');" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-outline-danger btn-sm rounded-circle p-2" title="Hủy / Xóa lịch hẹn">
+                                                    <i class="bi bi-trash-fill"></i>
+                                                </button>
+                                            </form>
+                                        </td>
                                     </tr>
                                 }
                             }
@@ -335,3 +354,10 @@
         </div>
     </div>
 </div>
+
+<script>
+    function setSlot(start, end) {
+        document.getElementById('StartTime').value = start;
+        document.getElementById('EndTime').value = end;
+    }
+</script>
