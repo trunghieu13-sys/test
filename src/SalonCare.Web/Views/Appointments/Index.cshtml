@@ -140,79 +140,74 @@
 
                     <!-- Chọn Khách hàng -->
                     <div class="mb-3">
-                        <label asp-for="FormModel.CustomerId" class="form-label fw-semibold">
+                        <label for="CustomerId" class="form-label fw-semibold">
                             <i class="bi bi-person me-1"></i> Khách hàng <span class="text-danger">*</span>
                         </label>
-                        <select asp-for="FormModel.CustomerId" class="form-select form-select-lg fs-6" required>
+                        <select name="CustomerId" id="CustomerId" class="form-select form-select-lg fs-6" required>
                             <option value="">-- Chọn khách hàng --</option>
                             @foreach (var cust in Model.Customers)
                             {
                                 <option value="@cust.CustomerId">@cust.FullName - @cust.PhoneNumber</option>
                             }
                         </select>
-                        <span asp-validation-for="FormModel.CustomerId" class="text-danger small"></span>
                     </div>
 
                     <!-- Chọn Kỹ thuật viên -->
                     <div class="mb-3">
-                        <label asp-for="FormModel.TechnicianId" class="form-label fw-semibold">
+                        <label for="TechnicianId" class="form-label fw-semibold">
                             <i class="bi bi-scissors me-1"></i> Kỹ thuật viên (Thợ) <span class="text-danger">*</span>
                         </label>
-                        <select asp-for="FormModel.TechnicianId" class="form-select form-select-lg fs-6" required>
+                        <select name="TechnicianId" id="TechnicianId" class="form-select form-select-lg fs-6" required>
                             <option value="">-- Chọn kỹ thuật viên --</option>
                             @foreach (var tech in Model.Technicians)
                             {
                                 <option value="@tech.TechnicianId">@tech.FullName (@tech.Specialization)</option>
                             }
                         </select>
-                        <span asp-validation-for="FormModel.TechnicianId" class="text-danger small"></span>
                     </div>
 
                     <!-- Tên Dịch vụ -->
                     <div class="mb-3">
-                        <label asp-for="FormModel.ServiceName" class="form-label fw-semibold">
+                        <label for="ServiceName" class="form-label fw-semibold">
                             <i class="bi bi-stars me-1"></i> Gói Dịch vụ <span class="text-danger">*</span>
                         </label>
-                        <input asp-for="FormModel.ServiceName" class="form-control" placeholder="Ví dụ: Cắt uốn tạo kiểu, Chăm sóc da..." required />
-                        <span asp-validation-for="FormModel.ServiceName" class="text-danger small"></span>
+                        <input name="ServiceName" id="ServiceName" class="form-control" value="Cắt uốn tạo kiểu cao cấp" placeholder="Ví dụ: Cắt uốn tạo kiểu, Chăm sóc da..." required />
                     </div>
 
                     <!-- Đơn giá -->
                     <div class="mb-3">
-                        <label asp-for="FormModel.Price" class="form-label fw-semibold">
+                        <label for="Price" class="form-label fw-semibold">
                             <i class="bi bi-cash-stack me-1"></i> Đơn giá dự kiến (VNĐ) <span class="text-danger">*</span>
                         </label>
-                        <input asp-for="FormModel.Price" type="number" step="10000" class="form-control" required />
-                        <span asp-validation-for="FormModel.Price" class="text-danger small"></span>
+                        <input name="Price" id="Price" type="number" step="10000" class="form-control" value="250000" required />
                     </div>
 
                     <!-- Ngày hẹn -->
                     <div class="mb-3">
-                        <label asp-for="FormModel.AppointmentDate" class="form-label fw-semibold">
+                        <label for="AppointmentDate" class="form-label fw-semibold">
                             <i class="bi bi-calendar-date me-1"></i> Ngày hẹn <span class="text-danger">*</span>
                         </label>
-                        <input asp-for="FormModel.AppointmentDate" type="date" class="form-control" required />
-                        <span asp-validation-for="FormModel.AppointmentDate" class="text-danger small"></span>
+                        <input name="AppointmentDate" id="AppointmentDate" type="date" class="form-control" value="2026-11-02" required />
                     </div>
 
                     <!-- Khung giờ (Bắt đầu - Kết thúc) -->
                     <div class="row g-2 mb-3">
                         <div class="col-6">
-                            <label asp-for="FormModel.StartTime" class="form-label fw-semibold small">Giờ Bắt Đầu <span class="text-danger">*</span></label>
-                            <input asp-for="FormModel.StartTime" type="time" class="form-control" required />
+                            <label for="StartTime" class="form-label fw-semibold small">Giờ Bắt Đầu <span class="text-danger">*</span></label>
+                            <input name="StartTime" id="StartTime" type="time" class="form-control" value="09:15" required />
                         </div>
                         <div class="col-6">
-                            <label asp-for="FormModel.EndTime" class="form-label fw-semibold small">Giờ Kết Thúc <span class="text-danger">*</span></label>
-                            <input asp-for="FormModel.EndTime" type="time" class="form-control" required />
+                            <label for="EndTime" class="form-label fw-semibold small">Giờ Kết Thúc <span class="text-danger">*</span></label>
+                            <input name="EndTime" id="EndTime" type="time" class="form-control" value="09:45" required />
                         </div>
                     </div>
 
                     <!-- Ghi chú -->
                     <div class="mb-4">
-                        <label asp-for="FormModel.Notes" class="form-label fw-semibold">
+                        <label for="Notes" class="form-label fw-semibold">
                             <i class="bi bi-chat-left-text me-1"></i> Ghi chú yêu cầu
                         </label>
-                        <textarea asp-for="FormModel.Notes" class="form-control" rows="2" placeholder="Yêu cầu riêng của khách..."></textarea>
+                        <textarea name="Notes" id="Notes" class="form-control" rows="2" placeholder="Yêu cầu riêng của khách..."></textarea>
                     </div>
 
                     <div class="d-grid">
@@ -224,7 +219,7 @@
             </div>
             <div class="card-footer bg-light border-top p-3 small text-muted">
                 <i class="bi bi-info-circle-fill text-primary me-1"></i>
-                <strong>Mẹo kiểm thử:</strong> Thử chọn KTV Nguyễn Văn Hùng vào ngày <strong>02/11/2026</strong> khung giờ <strong>09:15 - 09:45</strong> để xem thông báo chặn trùng lịch!
+                <strong>Mẹo kiểm thử:</strong> Chọn KTV <strong>Nguyễn Văn Hùng</strong> ngày <strong>02/11/2026</strong> giờ <strong>09:15 - 09:45</strong> để xem thông báo chặn trùng lịch! Sau đó đổi sang <strong>14:00 - 15:00</strong> để đặt thành công.
             </div>
         </div>
     </div>

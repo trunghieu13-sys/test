@@ -5,21 +5,22 @@ namespace SalonCare.Web.Models;
 
 /// <summary>
 /// ViewModel chứa dữ liệu đầu vào cho Form tạo mới Lịch hẹn.
+/// Sử dụng nullable int để ModelState bắt lỗi Required chính xác khi người dùng chưa chọn dropdown.
 /// </summary>
 public class CreateAppointmentViewModel
 {
     [Required(ErrorMessage = "Vui lòng chọn khách hàng.")]
     [Display(Name = "Khách hàng")]
-    public int CustomerId { get; set; }
+    public int? CustomerId { get; set; }
 
     [Required(ErrorMessage = "Vui lòng chọn kỹ thuật viên.")]
     [Display(Name = "Kỹ thuật viên")]
-    public int TechnicianId { get; set; }
+    public int? TechnicianId { get; set; }
 
-    [Required(ErrorMessage = "Vui lòng nhập tên dịch vụ.")]
+    [Required(ErrorMessage = "Vui lòng nhập tên gói dịch vụ.")]
     [StringLength(150, ErrorMessage = "Tên dịch vụ không vượt quá 150 ký tự.")]
     [Display(Name = "Tên dịch vụ")]
-    public string ServiceName { get; set; } = string.Empty;
+    public string ServiceName { get; set; } = "Cắt uốn tạo kiểu cao cấp";
 
     [Required(ErrorMessage = "Vui lòng nhập giá dịch vụ.")]
     [Range(10000, 50000000, ErrorMessage = "Giá dịch vụ phải từ 10.000 đến 50.000.000 VNĐ.")]
@@ -28,7 +29,7 @@ public class CreateAppointmentViewModel
 
     [Required(ErrorMessage = "Vui lòng chọn ngày hẹn.")]
     [Display(Name = "Ngày hẹn")]
-    public DateOnly AppointmentDate { get; set; } = DateOnly.FromDateTime(DateTime.Now.AddDays(1));
+    public DateOnly AppointmentDate { get; set; } = new DateOnly(2026, 11, 2);
 
     [Required(ErrorMessage = "Vui lòng chọn giờ bắt đầu.")]
     [Display(Name = "Giờ bắt đầu")]

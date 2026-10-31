@@ -58,10 +58,35 @@ public class AppointmentsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateAppointmentViewModel model)
     {
-        // 1. Kiểm tra tính hợp lệ của Model
-        if (!ModelState.IsValid)
+        // Xử lý tự động trích xuất nếu form submit có tiền tố FormModel.* từ Razor View
+        if ((!model.CustomerId.HasValue || model.CustomerId == 0) && Request.Form.ContainsKey("FormModel.CustomerId"))
         {
-            TempData["ErrorMessage"] = "Vui lòng kiểm tra lại thông tin nhập trên form!";
+            if (int.TryParse(Request.Form["FormModel.CustomerId"], out int cId)) model.CustomerId = cId;
+            if (int.TryParse(Request.Form["FormModel.TechnicianId"], out int tId)) model.TechnicianId = tId;
+            model.ServiceName = Request.Form["FormModel.ServiceName"].ToString();
+            if (decimal.TryParse(Request.Form["FormModel.Price"], out decimal price)) model.Price = price;
+            if (DateOnly.TryParse(Request.Form["FormModel.AppointmentDate"], out DateOnly date)) model.AppointmentDate = date;
+            if (TimeOnly.TryParse(Request.Form["FormModel.StartTime"], out TimeOnly start)) model.StartTime = start;
+            if (TimeOnly.TryParse(Request.Form["FormModel.EndTime"], out TimeOnly end)) model.EndTime = end;
+            model.Notes = Request.Form["FormModel.Notes"].ToString();
+        }
+
+        // 1. Kiểm tra tính hợp lệ cơ bản
+        if (!model.CustomerId.HasValue || model.CustomerId.Value <= 0)
+        {
+            TempData["ErrorMessage"] = "Vui lòng chọn khách hàng!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (!model.TechnicianId.HasValue || model.TechnicianId.Value <= 0)
+        {
+            TempData["ErrorMessage"] = "Vui lòng chọn kỹ thuật viên!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        if (string.IsNullOrWhiteSpace(model.ServiceName))
+        {
+            TempData["ErrorMessage"] = "Vui lòng nhập tên gói dịch vụ!";
             return RedirectToAction(nameof(Index));
         }
 
@@ -74,7 +99,7 @@ public class AppointmentsController : Controller
 
         // 3. KIỂM TRA TRÙNG LỊCH KỸ THUẬT VIÊN (BẮT BUỘC THEO YÊU CẦU ĐỒ ÁN)
         var hasOverlap = await _appointmentRepository.HasOverlapAsync(
-            model.TechnicianId,
+            model.TechnicianId.Value,
             model.AppointmentDate,
             model.StartTime,
             model.EndTime
@@ -95,8 +120,8 @@ public class AppointmentsController : Controller
         // 4. Nếu không trùng lịch, tiến hành tạo mới thực thể Appointment
         var appointment = new Appointment
         {
-            CustomerId = model.CustomerId,
-            TechnicianId = model.TechnicianId,
+            CustomerId = model.CustomerId.Value,
+            TechnicianId = model.TechnicianId.Value,
             AppointmentDate = model.AppointmentDate,
             StartTime = model.StartTime,
             EndTime = model.EndTime,
@@ -114,7 +139,7 @@ public class AppointmentsController : Controller
             appointment.AppointmentId, appointment.CustomerId
         );
 
-        TempData["SuccessMessage"] = $"Đặt lịch hẹn thành công cho khách hàng! Thời gian: {model.StartTime} - {model.EndTime} ngày {model.AppointmentDate:dd/MM/yyyy}.";
+        TempData["SuccessMessage"] = $"Đặt lịch hẹn thành công cho khách hàng! Thời gian: {model.StartTime:HH\\:mm} - {model.EndTime:HH\\:mm} ngày {model.AppointmentDate:dd/MM/yyyy}.";
         return RedirectToAction(nameof(Index));
     }
 }
